@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package protoPacket;
+
+enum PacketId {
+  PacketUnknown = 0;
+  PacketPlayer = 1;
+  PacketSanity = 2;
+  PacketDamage = 3;
+  PacketLocalPlayer = 4;
+}
+
+message Vector3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message Quaternion {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float w = 4;
+}
+
+message PlayerState {
+  enum State {
+    Idle = 0;
+    Move = 1;
+    Attack = 2;
+    Dead = 3;
+    Out = 4;
+  }
+
+  int64 tick = 1;
+  int32 id = 2;
+  State state = 3;
+  Vector3 pos = 4;
+  Quaternion rotation = 5;
+  int32 hp = 6;
+}
+
+message TakeDamage {
+    int32 damage = 1;
+    int32 attackerID = 2;
+    int32 targetID = 3;
+}
+
+message UseSkill {
+    int32 skillID = 1;
+}
+
+message Sanity {
+    bool ok = 1;
+    Vector3 pos = 2; 
+}
