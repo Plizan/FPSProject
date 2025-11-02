@@ -47,7 +47,7 @@ public class InputManager : ManagerBase
 		foreach (var a in _player.actions)
 			if (a.name.StartsWith("Skill"))
 				_skills.Add(a);
-
+		
 		_inputActionAsset.Enable();
 	}
 

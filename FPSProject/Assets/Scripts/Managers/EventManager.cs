@@ -108,4 +108,10 @@ public class EventTypesArgsBase
 
 public class LocalPlayerAttackEventArgs : EventTypesArgsBase
 {
+	public readonly int attackIndex;
+	
+	public LocalPlayerAttackEventArgs(int attackIndex = 0)
+	{
+		this.attackIndex = attackIndex;
+	}
 }

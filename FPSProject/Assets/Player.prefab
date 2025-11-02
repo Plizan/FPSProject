@@ -559,7 +559,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MovementCtrlCom
   _speed: 10
-  _rotSensitivity: 0.06
+  _rotSensitivity: 10
   _jumpPower: 10
   _recoil: 1
   _traRotate: {fileID: 127836842146508788}
@@ -619,7 +619,7 @@ MonoBehaviour:
   _cooldownFixedCount: 4
   _range: 100
   _damage: 25
-  _tightSpread: 0.3
+  _tightSpread: 0.1
   _spreadStep: 0.7
   _maxSpread: 8
   _traTracerStartPoint: {fileID: 2754435963397009790}

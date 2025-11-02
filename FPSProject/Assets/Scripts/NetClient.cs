@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using LiteNetLib;
@@ -44,6 +45,14 @@ public class NetClient : MonoBehaviour, INetEventListener
 	private void Start()
 	{
 		_client = new(this);
+
+#if UNITY_EDITOR
+		_client.DisconnectTimeout = int.MaxValue;
+#else
+		_client.PingInterval = 1000;
+		_client.DisconnectTimeout = 10000;
+#endif
+
 		_client.Start();
 		_client.Connect(_host, _port, "9yQLpB9nxdyanQBZ1zqwWLinUXfOFoN0aljyDMPiZIeJS80ZiE");
 	}
@@ -157,7 +166,7 @@ public class NetClient : MonoBehaviour, INetEventListener
 	{
 		if (_Ctrls.TryGetValue(id, out var remote) == false)
 			return;
-		
+
 		Destroy(remote.gameObject);
 		_Ctrls.Remove(id);
 		_targets.Remove(id);

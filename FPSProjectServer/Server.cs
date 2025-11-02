@@ -51,14 +51,11 @@ public class Server : INetEventListener
 		lock (_sync)
 		{
 			_players[peer.Id] = new() { peer = peer };
-			var writer = new NetDataWriter();
-			writer.Reset();
-			writer.Put((byte)PacketId.PacketLocalPlayer);
-			writer.Put(new PlayerState
+			SendPacket(peer, PacketId.PacketLocalPlayer, new()
 			{
 				Id = peer.Id,
-			}.ToByteArray());
-			peer.Send(writer, DeliveryMethod.ReliableOrdered);
+			}, DeliveryMethod.ReliableOrdered);
+			Console.WriteLine($"Peer {peer.Id} connected.");
 		}
 	}
 
@@ -97,6 +94,8 @@ public class Server : INetEventListener
 				State = PlayerState.Types.State.Out
 			}, peer.Id);
 			_players.Remove(peer.Id);
+			
+			Console.WriteLine($"Peer {peer.Id} disconnected: {info.Reason}");
 		}
 	}
 

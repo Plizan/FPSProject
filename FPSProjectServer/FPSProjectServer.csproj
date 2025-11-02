@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Include="..\..\..\FPSProject\Assets\Scripts\Protos\Player.cs">
+      <Compile Include="..\FPSProject\Assets\Scripts\Protos\Player.cs">
         <Link>Player.cs</Link>
       </Compile>
     </ItemGroup>

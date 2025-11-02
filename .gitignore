@@ -106,3 +106,5 @@ FPSProject/test_BackUpThisFolder_ButDontShipItWithYourGame
 FPSProject/Assets/_Recovery
 FPSProject/Assets/_Recovery.meta
 *.sln
+FPSProjectServer/bin
+FPSProjectServer/obj

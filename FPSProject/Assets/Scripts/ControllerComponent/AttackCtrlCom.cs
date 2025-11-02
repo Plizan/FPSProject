@@ -16,6 +16,8 @@ public class AttackCtrlCom : ControllerComponentBase
 	private float _spreadStep = 0.7f;
 	[SerializeField]
 	private float _maxSpread = 8f;
+	[SerializeField]
+	private float _cooldown = 0.4f;
 
 	[SerializeField]
 	private Transform _traTracerStartPoint;
@@ -31,14 +33,16 @@ public class AttackCtrlCom : ControllerComponentBase
 	private float _decalLife = 15f;
 
 	private Camera _targetCamera;
-	private int _currentFixedCount;
+	private float _lastAttackTime;
+	private int _attackIndex;
 	private bool _isAttacking;
 	private bool _isMoving;
 
 	public override void Initialize(ControllerBase parentCtrl, int id, bool isLocal)
 	{
 		base.Initialize(parentCtrl, id, isLocal);
-		if (isLocal) _targetCamera = parentCtrl.GetComponent<PlayerCtrl>().targetCamera;
+		if (isLocal)
+			_targetCamera = parentCtrl.GetComponent<PlayerCtrl>().targetCamera;
 	}
 
 	public override void BindSnapshot(InputManager.ActionSnapshot snapshot)
@@ -48,31 +52,30 @@ public class AttackCtrlCom : ControllerComponentBase
 		_isMoving = snapshot.isMoving;
 	}
 
-	private void FixedUpdate()
+	private void Update()
 	{
 		if (_isAttacking)
 		{
-			if (_currentFixedCount % _cooldownFixedCount == 0)
+			if (Time.time - _lastAttackTime >= _cooldown)
+			{
 				Attack();
-			++_currentFixedCount;
+				_lastAttackTime = Time.time;
+			}
 		}
-		else if (_currentFixedCount != 0)
-		{
-			if (_currentFixedCount % _cooldownFixedCount == 0)
-				_currentFixedCount = 0;
-			else
-				++_currentFixedCount;
-		}
+		else
+			_attackIndex = 0;
 	}
+
 
 	private void Attack()
 	{
-		var attackCount = _currentFixedCount / _cooldownFixedCount + 1;
+		_attackIndex += 1;
+		
 		var isJumping = ((PlayerCtrl)_parentCtrl).movementCtrlCom.characterController.isGrounded == false;
 		var step = _spreadStep;
 		if (isJumping)
 			step *= 2f;
-		var spread = attackCount <= 3 && _isMoving == false && isJumping == false ? _tightSpread : Mathf.Min(_maxSpread, _tightSpread + step * (attackCount - 3) * (attackCount - 3));
+		var spread = _attackIndex <= 3 && _isMoving == false && isJumping == false ? _tightSpread : Mathf.Min(_maxSpread, _tightSpread + step * (_attackIndex - 3) * (_attackIndex - 3));
 
 		var camPos = _targetCamera.transform.position;
 		var dir = GetSpreadDirection(_targetCamera.transform.forward, spread);
@@ -100,7 +103,7 @@ public class AttackCtrlCom : ControllerComponentBase
 			}
 		}
 
-		EventManager.Get.DispatchEvent(EventType.LocalPlayerAttack, new LocalPlayerAttackEventArgs());
+		EventManager.Get.DispatchEvent(EventType.LocalPlayerAttack, new LocalPlayerAttackEventArgs(_attackIndex));
 	}
 
 	private Vector3 GetSpreadDirection(Vector3 forward, float angleDeg)
