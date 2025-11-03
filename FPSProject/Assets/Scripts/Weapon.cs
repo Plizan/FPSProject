@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Weapon : MonoBehaviour
 {
@@ -7,14 +9,15 @@ public class Weapon : MonoBehaviour
 		public bool IsMoving { get; }
 		public bool IsJumping { get; }
 		public int AttackIndex { get; }
-
+		public Camera TargetCamera { get; }
 		public bool IsTight(int tightSpreadThreshold) => IsJumping == false && IsMoving == false && AttackIndex <= tightSpreadThreshold;
 
-		public FireContext(bool isMoving, bool isJumping, int attackIndex)
+		public FireContext(bool isMoving, bool isJumping, int attackIndex, Camera targetCamera)
 		{
 			IsMoving = isMoving;
 			IsJumping = isJumping;
 			AttackIndex = attackIndex;
+			TargetCamera = targetCamera;
 		}
 	}
 
@@ -25,7 +28,7 @@ public class Weapon : MonoBehaviour
 		public Vector3 End { get; }
 		public RaycastHit Hit { get; }
 		public float Spread { get; }
-		
+
 		public FireResult(bool hasHit, Vector3 start, Vector3 end, RaycastHit hit, float spread)
 		{
 			HasHit = hasHit;
@@ -55,29 +58,60 @@ public class Weapon : MonoBehaviour
 	private int _tightSpreadThreshold = 3;
 	[SerializeField]
 	private Transform _traStartPoint;
-	private const float spreadIncreaseExponent = 1.5f;
 
-	public FireResult Shot(FireContext fireContext)
+	private const float _spreadIncreaseExponent = 1.5f;
+	private const float _muzzleSafety = 0.2f;
+	private int _layerMask;
+
+	private void Awake()
 	{
-		var step = _spreadStep;
-		if (fireContext.IsJumping)
-			step *= 2f;
-		var spread = fireContext.IsTight(_tightSpreadThreshold)
-			? _tightSpread
-			: Mathf.Min(_maxSpread, _tightSpread + step * Mathf.Pow(fireContext.AttackIndex - _tightSpreadThreshold, spreadIncreaseExponent));
+		_layerMask = ~(1 << LayerMask.NameToLayer("Mine"));
+	}
+
+	public FireResult Shot(FireContext ctx)
+	{
+		var step = ctx.IsJumping ? _spreadStep * 2f : _spreadStep;
+		var baseIdx = Mathf.Max(0, ctx.AttackIndex - _tightSpreadThreshold);
+		var spread = ctx.IsTight(_tightSpreadThreshold) ? _tightSpread : Mathf.Min(_maxSpread, _tightSpread + step * Mathf.Pow(baseIdx, _spreadIncreaseExponent));
+		spread = Mathf.Clamp(spread, 0f, _maxSpread);
+
+		var cam = ctx.TargetCamera;
+		var camOrigin = cam.transform.position;
+		var camDir = cam.transform.forward;
+		var hasCamHit = Physics.Raycast(camOrigin, camDir, out var camHit, _distance, _layerMask, QueryTriggerInteraction.Ignore);
+		var aimPoint = hasCamHit ? camHit.point : camOrigin + camDir * _distance;
 
 		var startPos = _traStartPoint.position;
-		var dir = GetSpreadDirection(_traStartPoint.forward, spread);
-		var hasHit = Physics.Raycast(startPos, dir, out var hit, _distance, ~0, QueryTriggerInteraction.Ignore);
+		var dirToAim = (aimPoint - startPos).sqrMagnitude > 1e-12f ? (aimPoint - startPos).normalized : _traStartPoint.forward;
+		var dir = GetSpreadToward(dirToAim, spread);
+
+		var blockedNearMuzzle = Physics.Raycast(startPos, dir, out var nearHit, _muzzleSafety, _layerMask, QueryTriggerInteraction.Ignore);
+		if (blockedNearMuzzle)
+		{
+			return new(true, startPos, nearHit.point, nearHit, spread);
+		}
+
+		var hasHit = Physics.Raycast(startPos, dir, out var hit, _distance, _layerMask, QueryTriggerInteraction.Ignore);
 		var end = hasHit ? hit.point : startPos + dir * _distance;
-		
 		return new(hasHit, startPos, end, hit, spread);
 	}
 
-	private Vector3 GetSpreadDirection(Vector3 forward, float angleDeg)
+	private Vector3 GetSpreadToward(Vector3 dir, float angleDeg)
 	{
-		var o = Random.insideUnitCircle * angleDeg;
-		var q = Quaternion.Euler(o.y, o.x, 0f);
-		return (q * forward).normalized;
+		if (dir.sqrMagnitude < 1e-12f) dir = Vector3.forward;
+		dir.Normalize();
+		angleDeg = Mathf.Clamp(angleDeg, 0f, _maxSpread);
+
+		var u = Random.value;
+		var v = Random.value;
+
+		var theta = 2f * Mathf.PI * u;
+		var cosMax = Mathf.Cos(angleDeg * Mathf.Deg2Rad);
+		var cosPhi = Mathf.Lerp(1f, cosMax, v);
+		var sinPhi = Mathf.Sqrt(Mathf.Max(0f, 1f - cosPhi * cosPhi));
+
+		var local = new Vector3(Mathf.Cos(theta) * sinPhi, Mathf.Sin(theta) * sinPhi, cosPhi);
+		var basis = Quaternion.FromToRotation(Vector3.forward, dir);
+		return (basis * local).normalized;
 	}
 }

@@ -8,9 +8,17 @@ public class PlayerCtrl : ControllerBase
 	{
 		base.Initialize(id, isLocal);
 		targetCamera.SetActive(_isLocal);
-		
+
 		if (_isLocal)
+		{
+			var mineLayer = LayerMask.NameToLayer("Mine");
+			foreach (var tra in GetComponentsInChildren<Transform>(true))
+			{
+				tra.gameObject.layer = mineLayer;
+			}
+			
 			GameManager.Get.StartGame();
+		}
 	}
 	
 	private void Update()

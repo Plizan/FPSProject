@@ -8,7 +8,7 @@ using ProtoPacket;
 public class Player
 {
 	public NetPeer peer;
-	public PlayerState last;
+	public PlayerState lastPlayerState;
 }
 
 public class Server : INetEventListener
@@ -42,7 +42,7 @@ public class Server : INetEventListener
 				return;
 
 			playerState.Id = peer.Id;
-			player.last = playerState;
+			player.lastPlayerState = playerState;
 
 			SendToAll(PacketId.PacketPlayer, playerState, peer.Id);
 			SendPacket(peer, PacketId.PacketLocalPlayer, playerState, DeliveryMethod.ReliableSequenced);
@@ -123,13 +123,14 @@ public class Server : INetEventListener
 				case PacketId.PacketDamage:
 				{
 					var takeDamage = TakeDamage.Parser.ParseFrom(payload);
-					var playerState = _players.GetValueOrDefault(takeDamage.TargetID)?.last;
+					var player = _players.GetValueOrDefault(takeDamage.TargetID);
 
-					if (playerState == null)
+					if (player == null)
 						break;
 
+					var playerState = player.lastPlayerState;
 					playerState.Hp -= takeDamage.Damage;
-					OnPlayer(playerState, peer);
+					OnPlayer(playerState, player.peer);
 					break;
 				}
 			}

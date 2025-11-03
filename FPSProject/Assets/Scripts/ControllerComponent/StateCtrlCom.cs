@@ -13,18 +13,27 @@ public class StateCtrlCom : ControllerComponentBase
 		{
 			_hp = 0;
 			Destroy(gameObject);
-			Debug.Log($"Player {_id} is dead.");
+			Debug.Log($"{_id} is dead.");
 		}
-		UIManager.Get.UpdateHP(_hp);
+		
+		if (_isLocal)
+			UIManager.Get.UpdateHP(_hp);
 	}
 
 	public void TakeDamage(int damage, int attackerID)
 	{
-		NetClient.Get.TakeDamage(new()
+		if (NetClient.Get)
 		{
-			Damage = damage,
-			TargetID = _id,
-			AttackerID = attackerID
-		});
+			NetClient.Get.TakeDamage(new()
+			{
+				Damage = damage,
+				TargetID = _id,
+				AttackerID = attackerID
+			});
+			
+			return;
+		}
+		
+		SetHP(_hp - damage);
 	}
 }

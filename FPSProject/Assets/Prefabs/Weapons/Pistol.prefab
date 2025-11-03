@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8859646098567690952}
   - component: {fileID: 205429364847854616}
   m_Layer: 0
-  m_Name: Weapon
+  m_Name: Pistol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -49,8 +49,8 @@ MonoBehaviour:
   _damage: 25
   _tightSpread: 0.3
   _spreadStep: 0.7
-  _maxSpread: 8
-  _cooldown: 0.4
+  _maxSpread: 4
+  _cooldown: 0.2
   _tightSpreadThreshold: 3
   _traStartPoint: {fileID: 6837215877655350981}
 --- !u!1 &3902826928046811053
@@ -112,8 +112,8 @@ Transform:
   m_GameObject: {fileID: 5073410139978115740}
   serializedVersion: 2
   m_LocalRotation: {x: 0.09741652, y: -0.2725822, z: -0.3532156, w: 0.88963354}
-  m_LocalPosition: {x: 0.272, y: 0.761, z: 0.72}
-  m_LocalScale: {x: 0.28155813, y: 0.276, z: 1}
+  m_LocalPosition: {x: 0.2735, y: 0.9522, z: 0.5196}
+  m_LocalScale: {x: 0.14024411, y: 0.1421952, z: 0.5334}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6837215877655350981}
@@ -152,7 +152,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 372fadc8fee0d0d4480b3839e094b497, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

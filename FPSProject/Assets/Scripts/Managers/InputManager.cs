@@ -14,9 +14,10 @@ public class InputManager : ManagerBase
 		public bool crouch;
 		public bool walk;
 		public bool attack;
+		public bool[] weapons;
 		public bool[] skills;
 	}
-	
+
 	public static InputManager Get => Managers.Input;
 
 	[SerializeField]
@@ -29,7 +30,11 @@ public class InputManager : ManagerBase
 	private InputAction _attack;
 	private InputAction _crouch;
 	private InputAction _walk;
+	private List<InputAction> _weapons = new();
 	private List<InputAction> _skills = new();
+
+	private bool[] _skillsTriggers;
+	private bool[] _weaponsTriggers;
 
 	public override void Initialize()
 	{
@@ -44,15 +49,25 @@ public class InputManager : ManagerBase
 		_walk = _player.FindAction("Walk", true);
 
 		_skills.Clear();
+		_weapons.Clear();
+
 		foreach (var a in _player.actions)
+		{
 			if (a.name.StartsWith("Skill"))
 				_skills.Add(a);
-		
+
+			if (a.name.StartsWith("Weapon"))
+				_weapons.Add(a);
+		}
+
+		_skillsTriggers = new bool[_skills.Count];
+		_weaponsTriggers = new bool[_weapons.Count];
+
 		_inputActionAsset.Enable();
 	}
 
 	private bool _isFocused = true;
-	
+
 	private void OnApplicationFocus(bool hasFocus)
 	{
 		_isFocused = hasFocus;
@@ -63,6 +78,17 @@ public class InputManager : ManagerBase
 	public ActionSnapshot GetPlayerInputSnapshot()
 	{
 		var moveValue = _move.ReadValue<Vector2>();
+
+		for (var i = 0; i < _skills.Count; i++)
+		{
+			_skillsTriggers[i] = _skills[i].WasPressedThisFrame();
+		}
+
+		for (var i = 0; i < _weapons.Count; i++)
+		{
+			_weaponsTriggers[i] = _weapons[i].WasPressedThisFrame();
+		}
+
 		return new()
 		{
 			move = moveValue,
@@ -71,7 +97,8 @@ public class InputManager : ManagerBase
 			jump = _jump.WasPressedThisFrame(),
 			crouch = _crouch.WasPressedThisFrame(),
 			walk = _walk.IsPressed(),
-			skills = _skills.ConvertAll(a => a.WasPressedThisFrame()).ToArray(),
+			skills = _skillsTriggers,
+			weapons = _weaponsTriggers,
 			attack = _attack.IsPressed(),
 		};
 	}

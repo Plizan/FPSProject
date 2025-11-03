@@ -13,6 +13,8 @@ public class NetClient : MonoBehaviour, INetEventListener
 	public static NetClient Get { get; private set; }
 
 	[SerializeField]
+	private bool _isSinglePlayMode;
+	[SerializeField]
 	private string _host = "127.0.0.1";
 	[SerializeField]
 	private int _port = 1234;
@@ -29,7 +31,7 @@ public class NetClient : MonoBehaviour, INetEventListener
 	private float _acc;
 	private int _id = -1;
 
-	private PlayerCtrl localPlayerCtrl => _Ctrls[_id];
+	public PlayerCtrl localPlayerCtrl => _Ctrls[_id];
 
 	private readonly Dictionary<int, PlayerCtrl> _Ctrls = new();
 	private readonly Dictionary<int, (Vector3, Quaternion)> _targets = new();
@@ -37,6 +39,13 @@ public class NetClient : MonoBehaviour, INetEventListener
 
 	private void Awake()
 	{
+		if (_isSinglePlayMode)
+		{
+			enabled = false;
+			TryGeneratePlayerObj(0, true);
+			return;
+		}
+
 		Application.runInBackground = true;
 		Get = this;
 	}
@@ -77,12 +86,12 @@ public class NetClient : MonoBehaviour, INetEventListener
 			if (_targets.TryGetValue(id, out var target) == false)
 				continue;
 
-			if (_velocities.TryGetValue(id, out var v) == false)
-				v = Vector3.zero;
+			if (_velocities.TryGetValue(id, out var velocity) == false)
+				velocity = Vector3.zero;
 
-			ctrl.transform.position = Vector3.SmoothDamp(ctrl.transform.position, target.Item1, ref v, 0.05f);
+			ctrl.transform.position = Vector3.SmoothDamp(ctrl.transform.position, target.Item1, ref velocity, 0.05f);
 			ctrl.transform.rotation = target.Item2;
-			_velocities[id] = v;
+			_velocities[id] = velocity;
 		}
 	}
 
@@ -135,10 +144,10 @@ public class NetClient : MonoBehaviour, INetEventListener
 		_netPeer.Send(_writer, DeliveryMethod.ReliableOrdered);
 	}
 
-	private void TryGeneratePlayerObj(int id, bool isLocal)
+	private bool TryGeneratePlayerObj(int id, bool isLocal)
 	{
 		if (_Ctrls.ContainsKey(id))
-			return;
+			return false;
 
 		var traSpawn = GameManager.Get.spawnPoints[id % GameManager.Get.spawnPoints.Length];
 		var obj = Instantiate(_remotePrefab, traSpawn.position, traSpawn.rotation);
@@ -148,6 +157,8 @@ public class NetClient : MonoBehaviour, INetEventListener
 		playerCtrl.Initialize(id, isLocal);
 		_Ctrls[id] = playerCtrl;
 		_velocities[id] = Vector3.zero;
+
+		return true;
 	}
 
 	public void OnPeerConnected(NetPeer peer)
@@ -166,7 +177,9 @@ public class NetClient : MonoBehaviour, INetEventListener
 		if (_Ctrls.TryGetValue(id, out var remote) == false)
 			return;
 
-		Destroy(remote.gameObject);
+		if (remote?.gameObject)
+			Destroy(remote.gameObject);
+		
 		_Ctrls.Remove(id);
 		_targets.Remove(id);
 		_velocities.Remove(id);
