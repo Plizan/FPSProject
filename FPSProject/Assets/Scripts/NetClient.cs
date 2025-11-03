@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Net;
 using LiteNetLib;
@@ -100,7 +99,7 @@ public class NetClient : MonoBehaviour, INetEventListener
 			Tick = _tick,
 			Pos = localPlayerCtrl.transform.position.GetVector3(),
 			Rotation = localPlayerCtrl.transform.rotation.GetQuaternion(),
-			Hp = localPlayerCtrl.stateCtrlCom.HP
+			Hp = localPlayerCtrl.GetCtrlCom<StateCtrlCom>().HP
 		}.ToByteArray();
 		_writer.Put(bytes);
 		_netPeer.Send(_writer, DeliveryMethod.ReliableSequenced);
@@ -124,7 +123,7 @@ public class NetClient : MonoBehaviour, INetEventListener
 			return;
 
 		TryGeneratePlayerObj(playerState.Id, false);
-		_Ctrls[playerState.Id].stateCtrlCom.SetHP(playerState.Hp);
+		_Ctrls[playerState.Id].GetCtrlCom<StateCtrlCom>().SetHP(playerState.Hp);
 		_targets[playerState.Id] = (playerState.Pos.GetVector3(), playerState.Rotation.GetQuaternion());
 	}
 
@@ -189,7 +188,7 @@ public class NetClient : MonoBehaviour, INetEventListener
 				}
 				else
 				{
-					localPlayerCtrl.stateCtrlCom.SetHP(data.Hp);
+					localPlayerCtrl.GetCtrlCom<StateCtrlCom>().SetHP(data.Hp);
 				}
 				break;
 			}

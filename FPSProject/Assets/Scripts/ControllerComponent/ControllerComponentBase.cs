@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class ControllerComponentBase : MonoBehaviour
@@ -15,5 +16,16 @@ public class ControllerComponentBase : MonoBehaviour
 	
 	public virtual void BindSnapshot(InputManager.ActionSnapshot snapshot)
 	{
+	}
+
+	private void Update()
+	{
+		if (_isLocal)
+			UpdateLocal();
+	}
+
+	protected virtual void UpdateLocal()
+	{
+		
 	}
 }

@@ -1,49 +1,20 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 public class AttackCtrlCom : ControllerComponentBase
 {
+	private Weapon _targetWeapon;
+	private WeaponFxVisual _targetWeaponVisual;
 	[SerializeField]
-	private int _cooldownFixedCount = 20;
+	private Transform _traCamera;
 	[SerializeField]
-	private float _range = 100f;
+	private Transform _traWeapon;
 	[SerializeField]
-	private int _damage = 25;
-	[SerializeField]
-	private float _tightSpread = 0.3f;
-	[SerializeField]
-	private float _spreadStep = 0.7f;
-	[SerializeField]
-	private float _maxSpread = 8f;
-	[SerializeField]
-	private float _cooldown = 0.4f;
+	private WeaponFxVisual _defaultWeaponVisual;
 
-	[SerializeField]
-	private Transform _traTracerStartPoint;
-	[SerializeField]
-	private LineRenderer _tracerPrefab;
-	[SerializeField]
-	private float _tracerSpeed = 200f;
-	[SerializeField]
-	private float _tracerWidth = 0.02f;
-	[SerializeField]
-	private DecalProjector _urpDecalPrefab;
-	[SerializeField]
-	private float _decalLife = 15f;
-
-	private Camera _targetCamera;
-	private float _lastAttackTime;
+	private float? _lastAttackTime;
 	private int _attackIndex;
 	private bool _isAttacking;
 	private bool _isMoving;
-
-	public override void Initialize(ControllerBase parentCtrl, int id, bool isLocal)
-	{
-		base.Initialize(parentCtrl, id, isLocal);
-		if (isLocal)
-			_targetCamera = parentCtrl.GetComponent<PlayerCtrl>().targetCamera;
-	}
 
 	public override void BindSnapshot(InputManager.ActionSnapshot snapshot)
 	{
@@ -52,86 +23,55 @@ public class AttackCtrlCom : ControllerComponentBase
 		_isMoving = snapshot.isMoving;
 	}
 
-	private void Update()
+	protected override void UpdateLocal()
 	{
+		base.UpdateLocal();
+
 		if (_isAttacking)
 		{
-			if (Time.time - _lastAttackTime >= _cooldown)
+			if (_lastAttackTime.HasValue == false || Time.time - _lastAttackTime >= _targetWeapon.cooldown)
 			{
 				Attack();
 				_lastAttackTime = Time.time;
 			}
 		}
-		else
+		else if (_lastAttackTime.HasValue && Time.time - _lastAttackTime >= _targetWeapon.cooldown)
+		{
 			_attackIndex = 0;
+			_lastAttackTime = null;
+		}
 	}
 
+	public void SetWeapon(GameObject objWeapon)
+	{
+		
+	}
 
 	private void Attack()
 	{
 		_attackIndex += 1;
-		
-		var isJumping = ((PlayerCtrl)_parentCtrl).movementCtrlCom.characterController.isGrounded == false;
-		var step = _spreadStep;
-		if (isJumping)
-			step *= 2f;
-		var spread = _attackIndex <= 3 && _isMoving == false && isJumping == false ? _tightSpread : Mathf.Min(_maxSpread, _tightSpread + step * (_attackIndex - 3) * (_attackIndex - 3));
 
-		var camPos = _targetCamera.transform.position;
-		var dir = GetSpreadDirection(_targetCamera.transform.forward, spread);
+		var result = _targetWeapon.Shot(new(
+			_isMoving,
+			_parentCtrl.GetCtrlCom<MovementCtrlCom>().characterController.isGrounded == false,
+			_attackIndex
+		));
 
-		var hasHit = Physics.Raycast(camPos, dir, out var hit, _range, ~0, QueryTriggerInteraction.Ignore);
-		var end = hasHit ? hit.point : camPos + dir * _range;
-
-		StartCoroutine(SpawnTracer(_traTracerStartPoint.transform.position, end));
-
-		if (hasHit)
+		if (result.HasHit)
 		{
-			var dp = Instantiate(_urpDecalPrefab, hit.point + hit.normal * 0.01f, Quaternion.LookRotation(-hit.normal));
-			dp.transform.Rotate(0f, 0f, Random.Range(0f, 360f));
-			if (hit.collider)
-				dp.transform.SetParent(hit.collider.transform, true);
-			Destroy(dp.gameObject, _decalLife);
-
-			var target = hit.collider.GetComponentInParent<StateCtrlCom>();
+			var hitCollider = result.Hit.collider;
+			var target = hitCollider.GetComponentInParent<StateCtrlCom>();
 			if (target != null)
 			{
-				var damage = _damage;
-				if (hit.collider.CompareTag("Head"))
+				var damage = _targetWeapon.damage;
+				if (hitCollider.CompareTag("Head"))
 					damage *= 4;
 				target.TakeDamage(damage, _id);
 			}
 		}
 
+		_targetWeaponVisual.OnShoot(result);
+
 		EventManager.Get.DispatchEvent(EventType.LocalPlayerAttack, new LocalPlayerAttackEventArgs(_attackIndex));
-	}
-
-	private Vector3 GetSpreadDirection(Vector3 forward, float angleDeg)
-	{
-		var o = Random.insideUnitCircle * angleDeg;
-		var q = Quaternion.Euler(o.y, o.x, 0f);
-		return (q * forward).normalized;
-	}
-
-	private IEnumerator SpawnTracer(Vector3 start, Vector3 end)
-	{
-		var lineRenderer = Instantiate(_tracerPrefab);
-		lineRenderer.positionCount = 2;
-		lineRenderer.startWidth = _tracerWidth;
-		lineRenderer.endWidth = _tracerWidth;
-		lineRenderer.SetPosition(0, start);
-		lineRenderer.SetPosition(1, start);
-		var dist = Vector3.Distance(start, end);
-		var t = 0f;
-		while (t < 1f)
-		{
-			t += Time.deltaTime * (_tracerSpeed / Mathf.Max(0.001f, dist));
-			var p = Vector3.Lerp(start, end, t);
-			lineRenderer.SetPosition(1, p);
-			yield return null;
-		}
-		lineRenderer.SetPosition(1, end);
-		yield return null;
-		Destroy(lineRenderer.gameObject);
 	}
 }

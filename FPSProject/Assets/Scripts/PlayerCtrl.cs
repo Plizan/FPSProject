@@ -2,8 +2,6 @@ using UnityEngine;
 
 public class PlayerCtrl : ControllerBase
 {
-	public StateCtrlCom stateCtrlCom;
-	public MovementCtrlCom movementCtrlCom;
 	public Camera targetCamera;
 
 	public override void Initialize(int id, bool isLocal)

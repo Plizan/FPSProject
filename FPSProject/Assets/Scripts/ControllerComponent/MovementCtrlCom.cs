@@ -47,11 +47,8 @@ public class MovementCtrlCom : ControllerComponentBase, IEventHandler
 		_crouchCenter = new(_standCenter.x, _standCenter.y - (_standHeight - _crouchHeight) * 0.5f, _standCenter.z);
 	}
 
-	private void Update()
+	protected override void UpdateLocal()
 	{
-		if (_isLocal == false)
-			return;
-
 		var dir = _snapshot.rotate;
 
 		if (dir.sqrMagnitude > 1e-4f)

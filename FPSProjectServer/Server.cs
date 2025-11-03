@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Google.Protobuf;
@@ -23,6 +24,8 @@ public class Server : INetEventListener
 	{
 		_server = new(this);
 		_server.Start(port);
+		Console.WriteLine("Server started\n" +
+		                  $"Server listening port on {_server.LocalPort}");
 
 		while (true)
 		{
@@ -94,7 +97,7 @@ public class Server : INetEventListener
 				State = PlayerState.Types.State.Out
 			}, peer.Id);
 			_players.Remove(peer.Id);
-			
+
 			Console.WriteLine($"Peer {peer.Id} disconnected: {info.Reason}");
 		}
 	}

@@ -3,6 +3,15 @@ using UnityEngine;
 public class ControllerBase : MonoBehaviour
 {
 	protected ControllerComponentBase[] _components;
+	public T GetCtrlCom<T>() where T : ControllerComponentBase
+	{
+		foreach (var component in _components)
+		{
+			if (component is T targetComponent)
+				return targetComponent;
+		}
+		return null;
+	}
 	public int id;
 	protected bool _isLocal;
 

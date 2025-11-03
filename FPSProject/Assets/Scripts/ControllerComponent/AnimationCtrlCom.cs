@@ -3,7 +3,7 @@ using UnityEngine;
 public class AnimationCtrlCom : ControllerComponentBase
 {
 	[SerializeField]
-	private GameObject[] _objRemoteTargets;
+	private GameObject _objRemoteTarget;
 	[SerializeField]
 	private GameObject _objLocalTarget;
 
@@ -11,9 +11,6 @@ public class AnimationCtrlCom : ControllerComponentBase
 	{
 		base.Initialize(parentCtrl, id, isLocal);
 		_objLocalTarget.SetActive(isLocal);
-		foreach (var obj in _objRemoteTargets)
-		{
-			obj.SetActive(isLocal == false);
-		}
+		_objRemoteTarget.SetActive(isLocal == false);
 	}
 }
